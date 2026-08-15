@@ -50,6 +50,8 @@
   </head>
   <body>
     <div class="texture"></div>
+    <!-- Supabase 클라이언트 라이브러리 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <div class="shell">
       <header><div class="logo"><span class="logo-mark">✦</span>오늘 점심 뭐 먹지?</div><div class="tag">LUNCH DECIDER v1.0</div></header>
       <main>
@@ -69,15 +71,102 @@
       <footer>NO MORE LUNCH 고민 · 결정은 가볍게, 점심은 맛있게</footer>
     </div>
     <script>
+      // ========== Supabase 설정 ==========
+      // Supabase 프로젝트 정보 (YOUR_SUPABASE_URL과 YOUR_SUPABASE_ANON_KEY를 교체하세요)
+      const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // 예: https://xxxxxxxxxxxx.supabase.co
+      const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+      
+      // Supabase 클라이언트 초기화
+      let supabase = null;
+      if (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY') {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+
+      // 세션 관리
+      let sessionId = localStorage.getItem('sessionId');
+      let sessionStartTime = new Date();
+      let spinCount = 0;
+
+      if (!sessionId) {
+        sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem('sessionId', sessionId);
+      } else {
+        sessionStartTime = new Date(localStorage.getItem('sessionStartTime') || Date.now());
+      }
+
+      if (!localStorage.getItem('sessionStartTime')) {
+        localStorage.setItem('sessionStartTime', sessionStartTime.toISOString());
+        if (supabase) {
+          supabase.from('sessions').insert([{
+            session_id: sessionId,
+            start_time: sessionStartTime.toISOString()
+          }]);
+        }
+      }
+
+      // 페이지 떠날 때 세션 종료 시간 저장
+      window.addEventListener('beforeunload', async () => {
+        const endTime = new Date();
+        const durationMinutes = Math.round((endTime - sessionStartTime) / 60000);
+        if (supabase) {
+          await supabase.from('sessions').update({
+            end_time: endTime.toISOString(),
+            duration_minutes: durationMinutes
+          }).eq('session_id', sessionId);
+        }
+        localStorage.setItem('sessionDuration', durationMinutes);
+      });
+
+      // ========== 룰렛 메뉴 및 색상 ==========
       const menus = ['김치찌개','제육볶음','된장찌개','비빔밥','국밥','순두부찌개','칼국수','냉면','쌀국수','마라탕','짜장면','짬뽕','볶음밥','돈까스','라멘','초밥','우동','카레','파스타','피자','햄버거','샌드위치','샐러드','김밥','떡볶이','닭갈비','보쌈','족발','닭볶음탕','치킨','부대찌개','뚝배기불고기','설렁탕','콩나물국밥','분짜','팟타이'];
       const colors = ['#ff725e','#cbeef0','#d7f4cf','#ffc844','#f8a6a1','#b7d6f6','#f6d5a6','#c9b9ed'];
       const svg = document.getElementById('wheel'), total = menus.length, slice = 360 / total;
       const ns = 'http://www.w3.org/2000/svg';
+      
       function el(name, attrs){const e=document.createElementNS(ns,name);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));return e}
       const disk=el('g',{id:'disk'}); svg.append(disk);
       menus.forEach((menu,i)=>{ const a1=(-90+i*slice)*Math.PI/180,a2=(-90+(i+1)*slice)*Math.PI/180,r=246; const d=`M250 250 L${250+r*Math.cos(a1)} ${250+r*Math.sin(a1)} A${r} ${r} 0 0 1 ${250+r*Math.cos(a2)} ${250+r*Math.sin(a2)} Z`; disk.append(el('path',{d,fill:colors[i%colors.length],stroke:'#1d2433','stroke-width':'1.4'})); const angle=-90+(i+.5)*slice,mid=angle*Math.PI/180,tx=250+178*Math.cos(mid),ty=250+178*Math.sin(mid),readable=angle>90&&angle<270?angle+180:angle; const t=el('text',{x:tx,y:ty,fill:'#1d2433','font-family':'Gowun Dodum, sans-serif','font-size':'11','font-weight':'bold','text-anchor':'middle','dominant-baseline':'middle',transform:`rotate(${readable} ${tx} ${ty})`});t.textContent=menu;disk.append(t); });
+      
+      // ========== 룰렛 실행 로직 ==========
       const button=document.getElementById('spinButton'),result=document.getElementById('result'),winner=document.getElementById('winner'),winnerName=winner.querySelector('strong');let rotation=0,isSpinning=false;
-      button.addEventListener('click',()=>{if(isSpinning)return;isSpinning=true;button.disabled=true;winner.classList.remove('show');const picked=Math.floor(Math.random()*total);const center=picked*slice+slice/2;rotation+=360*7+(360-center-(rotation%360));disk.style.transform=`rotate(${rotation}deg)`;setTimeout(()=>{winnerName.textContent=menus[picked];winner.classList.add('show');button.disabled=false;button.textContent='한 번 더 돌리기 ↻';isSpinning=false;},4250);});
+      
+      button.addEventListener('click', async ()=>{
+        if(isSpinning)return;
+        isSpinning=true;
+        button.disabled=true;
+        winner.classList.remove('show');
+        
+        const picked=Math.floor(Math.random()*total);
+        const center=picked*slice+slice/2;
+        rotation+=360*7+(360-center-(rotation%360));
+        disk.style.transform=`rotate(${rotation}deg)`;
+        
+        spinCount++;
+        
+        setTimeout(async ()=>{
+          const selectedMenu = menus[picked];
+          winnerName.textContent=selectedMenu;
+          winner.classList.add('show');
+          button.disabled=false;
+          button.textContent='한 번 더 돌리기 ↻';
+          isSpinning=false;
+          
+          // Supabase에 데이터 저장
+          if (supabase) {
+            try {
+              await supabase.from('roulette_spins').insert([{
+                session_id: sessionId,
+                menu: selectedMenu,
+                spin_count: spinCount,
+                spun_at: new Date().toISOString()
+              }]);
+              console.log('✅ 데이터 저장 완료:', selectedMenu, 'Spin #' + spinCount);
+            } catch (error) {
+              console.error('❌ Supabase 저장 실패:', error);
+            }
+          }
+        },4250);
+      });
     </script>
   </body>
 </html>
