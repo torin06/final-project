@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>오늘 점심 뭐 먹지? | 점심 룰렛</title>
+    <meta name="description" content="1초 만에 오늘의 점심 메뉴를 정해보세요." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet" />
+    <style>
+      :root { --ink:#1d2433; --coral:#ff725e; --yellow:#ffc844; --cream:#fff9ed; --blue:#cbeef0; --mint:#d7f4cf; }
+      * { box-sizing:border-box; }
+      body { margin:0; min-height:100vh; color:var(--ink); background:var(--cream); font-family:'Gowun Dodum', sans-serif; overflow-x:hidden; }
+      .texture { position:fixed; inset:0; opacity:.38; pointer-events:none; background-image:radial-gradient(#d9cdb7 .7px,transparent .8px); background-size:12px 12px; }
+      .shell { width:min(1180px,calc(100% - 40px)); margin:auto; position:relative; }
+      header { height:70px; display:flex; align-items:center; justify-content:space-between; }
+      .logo { display:flex; align-items:center; gap:10px; font-family:'Jua',sans-serif; font-size:22px; }
+      .logo-mark { width:33px; height:33px; border-radius:50%; display:grid; place-items:center; background:var(--coral); color:white; transform:rotate(-8deg); box-shadow:3px 3px 0 #1d2433; }
+      .tag { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.04em; border:1.5px solid var(--ink); border-radius:99px; padding:8px 12px; background:#fffdf7; }
+      main { min-height:calc(100vh - 100px); display:grid; grid-template-columns: .95fr 1.05fr; align-items:center; gap:36px; padding:10px 0 14px; }
+      .eyebrow { font:500 12px 'DM Mono',monospace; letter-spacing:.1em; display:inline-flex; gap:8px; align-items:center; background:var(--yellow); padding:8px 12px; transform:rotate(-2deg); }
+      .eyebrow span { width:7px; height:7px; background:var(--coral); border-radius:50%; }
+      h1 { font-family:'Jua',sans-serif; font-size:clamp(48px,6vw,82px); line-height:1.08; letter-spacing:-.04em; margin:22px 0 20px; }
+      h1 em { color:var(--coral); font-style:normal; }
+      .intro { font-size:17px; line-height:1.8; max-width:430px; margin:0; color:#4b5260; }
+      .mobile-break { display:none; }
+      .tips { display:flex; gap:10px; flex-wrap:wrap; margin-top:28px; }
+      .tips span { color:#5d6470; padding:3px 0; font-size:13px; }
+      .roulette-zone { position:relative; display:grid; place-items:center; padding:38px 10px 0; }
+      .sun { position:absolute; top:48px; left:50%; width:min(72vw,430px); aspect-ratio:1; border-radius:50%; background:var(--yellow); transform:translateX(-50%) translate(10px,10px); z-index:-1; }
+      .wheel-wrap { position:relative; width:min(72vw,430px); aspect-ratio:1; filter:drop-shadow(8px 9px 0 rgba(29,36,51,.98)); }
+      .pointer { position:absolute; z-index:4; top:-13px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:22px solid transparent; border-right:22px solid transparent; border-top:50px solid var(--coral); filter:drop-shadow(2px 2px 0 var(--ink)); }
+      #wheel { display:block; overflow:visible; width:100%; height:100%; border-radius:50%; }
+      #disk { transform-box:view-box; transform-origin:center; transition:transform 4.2s cubic-bezier(.13,.78,.1,1); }
+      .hub { position:absolute; inset:0; margin:auto; width:91px; height:91px; z-index:2; border:2px solid var(--ink); border-radius:50%; background:#fffdf7; display:grid; place-items:center; text-align:center; font-family:'Jua',sans-serif; line-height:1.05; font-size:17px; pointer-events:none; transition:opacity .2s; }
+      .hub small { display:block; font:10px 'DM Mono',monospace; margin-top:3px; }
+      .spin { position:relative; z-index:5; margin-top:26px; border:2px solid var(--ink); border-radius:9px; padding:16px 31px; color:#fff; background:var(--ink); font:20px 'Jua',sans-serif; cursor:pointer; box-shadow:5px 5px 0 var(--coral); transition:transform .15s,box-shadow .15s; }
+      .spin:hover { transform:translate(2px,2px); box-shadow:3px 3px 0 var(--coral); }
+      .spin:disabled { opacity:.65; cursor:wait; transform:none; }
+      .result { display:none; }
+      .result strong { display:block; font-family:'Jua',sans-serif; font-size:31px; color:var(--coral); margin-top:5px; }
+      .winner { position:absolute; z-index:6; inset:0; margin:auto; width:185px; height:112px; border:2px solid var(--ink); border-radius:8px; background:#fffdf7; color:var(--ink); display:grid; place-content:center; text-align:center; font-size:14px; font-weight:bold; line-height:1.15; box-shadow:5px 5px 0 var(--coral); opacity:0; transform:scale(.35) rotate(-5deg); pointer-events:none; }
+      .winner strong { display:block; font-family:'Jua',sans-serif; font-size:31px; color:var(--coral); margin-top:7px; }
+      .winner.show { animation:pop .65s cubic-bezier(.18,1.35,.45,1) forwards; }
+      @keyframes pop { to { opacity:1; transform:scale(1) rotate(0); } }
+      footer { padding:0 0 14px; text-align:center; font:11px 'DM Mono',monospace; color:#687080; }
+      @media(max-width:760px){ header{height:72px}.shell{width:min(100% - 28px,540px)}.tag{font-size:9px;padding:7px 9px}.logo{font-size:19px}main{display:flex; flex-direction:column; gap:10px; align-items:stretch; padding:27px 0 28px}.intro{font-size:15px}.mobile-break{display:inline}.tips{margin-top:20px}.roulette-zone{padding-top:30px}.sun{top:40px;width:min(86vw,460px)}.wheel-wrap{width:min(86vw,460px)}h1{font-size:50px}.pointer{top:-11px;border-left-width:18px;border-right-width:18px;border-top-width:43px}.hub{width:76px;height:76px;font-size:14px}.winner{width:155px;height:98px;font-size:13px}.winner strong{font-size:26px}.spin{padding:15px 25px;margin-top:23px}.result{display:none} }
+    </style>
+  </head>
+  <body>
+    <div class="texture"></div>
+    <div class="shell">
+      <header><div class="logo"><span class="logo-mark">✦</span>오늘 점심 뭐 먹지?</div><div class="tag">LUNCH DECIDER v1.0</div></header>
+      <main>
+        <section>
+          <div class="eyebrow"><span></span>점심메뉴룰렛</div>
+          <h1>점심 고민,<br /><em>1초</em>면 끝!</h1>
+          <p class="intro">메뉴 앞에서 망설이느라<span class="mobile-break"><br /></span> 소중한 점심시간을 쓰지 마세요.<br />룰렛이 오늘의 한 끼를 시원하게 골라드릴게요.</p>
+          <div class="tips"><span>🍴 혼밥도 OK</span><span>👯 단체 메뉴도 OK</span><span>📍 어디서나 찾기 쉬운 메뉴</span></div>
+        </section>
+        <section class="roulette-zone" aria-label="점심 메뉴 룰렛">
+          <div class="sun"></div>
+          <div class="wheel-wrap"><div class="pointer"></div><svg id="wheel" viewBox="0 0 500 500" role="img" aria-label="점심 메뉴 룰렛"></svg><div class="hub">오늘의<br />점심</div><div class="winner" id="winner">오늘의 점심은<strong></strong></div></div>
+          <button class="spin" id="spinButton">점심 룰렛 돌리기 ✦</button>
+          <div class="result" id="result" aria-live="polite"></div>
+        </section>
+      </main>
+      <footer>NO MORE LUNCH 고민 · 결정은 가볍게, 점심은 맛있게</footer>
+    </div>
+    <script>
+      const menus = ['김치찌개','제육볶음','된장찌개','비빔밥','국밥','순두부찌개','칼국수','냉면','쌀국수','마라탕','짜장면','짬뽕','볶음밥','돈까스','라멘','초밥','우동','카레','파스타','피자','햄버거','샌드위치','샐러드','김밥','떡볶이','닭갈비','보쌈','족발','닭볶음탕','치킨','부대찌개','뚝배기불고기','설렁탕','콩나물국밥','분짜','팟타이'];
+      const colors = ['#ff725e','#cbeef0','#d7f4cf','#ffc844','#f8a6a1','#b7d6f6','#f6d5a6','#c9b9ed'];
+      const svg = document.getElementById('wheel'), total = menus.length, slice = 360 / total;
+      const ns = 'http://www.w3.org/2000/svg';
+      function el(name, attrs){const e=document.createElementNS(ns,name);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));return e}
+      const disk=el('g',{id:'disk'}); svg.append(disk);
+      menus.forEach((menu,i)=>{ const a1=(-90+i*slice)*Math.PI/180,a2=(-90+(i+1)*slice)*Math.PI/180,r=246; const d=`M250 250 L${250+r*Math.cos(a1)} ${250+r*Math.sin(a1)} A${r} ${r} 0 0 1 ${250+r*Math.cos(a2)} ${250+r*Math.sin(a2)} Z`; disk.append(el('path',{d,fill:colors[i%colors.length],stroke:'#1d2433','stroke-width':'1.4'})); const angle=-90+(i+.5)*slice,mid=angle*Math.PI/180,tx=250+178*Math.cos(mid),ty=250+178*Math.sin(mid),readable=angle>90&&angle<270?angle+180:angle; const t=el('text',{x:tx,y:ty,fill:'#1d2433','font-family':'Gowun Dodum, sans-serif','font-size':'11','font-weight':'bold','text-anchor':'middle','dominant-baseline':'middle',transform:`rotate(${readable} ${tx} ${ty})`});t.textContent=menu;disk.append(t); });
+      const button=document.getElementById('spinButton'),result=document.getElementById('result'),winner=document.getElementById('winner'),winnerName=winner.querySelector('strong');let rotation=0,isSpinning=false;
+      button.addEventListener('click',()=>{if(isSpinning)return;isSpinning=true;button.disabled=true;winner.classList.remove('show');const picked=Math.floor(Math.random()*total);const center=picked*slice+slice/2;rotation+=360*7+(360-center-(rotation%360));disk.style.transform=`rotate(${rotation}deg)`;setTimeout(()=>{winnerName.textContent=menus[picked];winner.classList.add('show');button.disabled=false;button.textContent='한 번 더 돌리기 ↻';isSpinning=false;},4250);});
+    </script>
+  </body>
+</html>
