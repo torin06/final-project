@@ -127,7 +127,10 @@
             }]);
             
             if (insertError) {
-              console.error('❌ 세션 테이블 저장 실패:', insertError);
+              console.error('❌ 세션 테이블 저장 실패:');
+              console.error('  - 에러 메시지:', insertError.message);
+              console.error('  - 에러 코드:', insertError.code);
+              console.error('  - 전체 에러:', insertError);
               console.log('📝 확인 사항:');
               console.log('  1. Supabase > SQL Editor에서 supabase-setup.sql 실행?');
               console.log('  2. sessions 테이블 생성됨?');
@@ -280,18 +283,24 @@
                   }]);
                   
                   if (error) {
-                    console.error('❌ 저장 실패:', error);
-                    if (error.message.includes('relation')) {
-                      console.log('📝 확인: roulette_spins 테이블이 생성되어 있나요?');
+                    console.error('❌ 저장 실패:');
+                    console.error('  - 에러 메시지:', error.message);
+                    console.error('  - 에러 코드:', error.code);
+                    console.error('  - 상태 코드:', error.status);
+                    console.error('  - 전체 에러:', error);
+                    
+                    if (error.message.includes('relation') || error.message.includes('roulette_spins')) {
+                      console.log('📝 해결책: roulette_spins 테이블이 생성되어 있는지 확인하세요');
                     }
                     if (error.message.includes('permission')) {
-                      console.log('📝 확인: RLS 정책이 올바르게 설정되어 있나요?');
+                      console.log('📝 해결책: RLS 정책이 올바르게 설정되어 있는지 확인하세요');
                     }
                   } else {
                     console.log('✅ 데이터 저장 성공:', selectedMenu);
                   }
                 } catch (e) {
                   console.error('⚠️ 저장 중 에러:', e);
+                  console.error('  - 에러 메시지:', e.message);
                 }
               } else {
                 if (!supabaseClient) {
