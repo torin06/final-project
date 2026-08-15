@@ -121,22 +121,28 @@
           
           if (!localStorage.getItem('sessionStartTime')) {
             localStorage.setItem('sessionStartTime', sessionStartTime.toISOString());
-            const { error: insertError } = await supabaseClient.from('sessions').insert([{
-              session_id: sessionId,
-              start_time: sessionStartTime.toISOString()
-            }]);
             
-            if (insertError) {
-              console.error('❌ 세션 테이블 저장 실패:');
-              console.error('  - 에러 메시지:', insertError.message);
-              console.error('  - 에러 코드:', insertError.code);
-              console.error('  - 전체 에러:', insertError);
-              console.log('📝 확인 사항:');
-              console.log('  1. Supabase > SQL Editor에서 supabase-setup.sql 실행?');
-              console.log('  2. sessions 테이블 생성됨?');
-              console.log('  3. RLS 정책 "Enable all access" 설정됨?');
-            } else {
-              console.log('✅ 세션 저장 완료');
+            // ✅ await로 완료될 때까지 기다리기 (중요!)
+            try {
+              const { error: insertError } = await supabaseClient.from('sessions').insert([{
+                session_id: sessionId,
+                start_time: sessionStartTime.toISOString()
+              }]);
+              
+              if (insertError) {
+                console.error('❌ 세션 테이블 저장 실패:');
+                console.error('  - 에러 메시지:', insertError.message);
+                console.error('  - 에러 코드:', insertError.code);
+                console.error('  - 상태 코드:', insertError.status);
+                console.error('  - 전체 에러:', insertError);
+                console.log('📝 해결책:');
+                console.log('  1. Supabase > sessions 테이블 확인');
+                console.log('  2. RLS 정책 "Enable all access" 설정 확인');
+              } else {
+                console.log('✅ 세션 저장 완료 - roulette_spins 저장 가능!');
+              }
+            } catch (e) {
+              console.error('❌ 세션 저장 중 예외:', e.message);
             }
           }
           
