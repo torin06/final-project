@@ -72,7 +72,7 @@
     </div>
     <script>
       // ========== Supabase 초기화 ==========
-      let supabase = null;
+      let supabaseClient = null;
       let sessionId = null;
       let sessionStartTime = null;
       let spinCount = 0;
@@ -86,7 +86,7 @@
           }
           const { supabase: config } = await response.json();
           if (config.url && config.anonKey) {
-            supabase = window.supabase.createClient(config.url, config.anonKey);
+            supabaseClient = window.supabase.createClient(config.url, config.anonKey);
             sessionId = localStorage.getItem('sessionId');
             sessionStartTime = new Date();
             if (!sessionId) {
@@ -98,7 +98,7 @@
             }
             if (!localStorage.getItem('sessionStartTime')) {
               localStorage.setItem('sessionStartTime', sessionStartTime.toISOString());
-              await supabase.from('sessions').insert([{
+              await supabaseClient.from('sessions').insert([{
                 session_id: sessionId,
                 start_time: sessionStartTime.toISOString()
               }]);
@@ -111,11 +111,11 @@
       }
 
       window.addEventListener('beforeunload', async () => {
-        if (!supabase || !sessionId) return;
+        if (!supabaseClient || !sessionId) return;
         const endTime = new Date();
         const durationMinutes = Math.round((endTime - sessionStartTime) / 60000);
         try {
-          await supabase.from('sessions').update({
+          await supabaseClient.from('sessions').update({
             end_time: endTime.toISOString(),
             duration_minutes: durationMinutes
           }).eq('session_id', sessionId);
@@ -153,6 +153,8 @@
           const disk = el('g', {id: 'disk'}); 
           svg.append(disk);
           
+          console.log('🎨 메뉴 그리기 시작 (총', menus.length, '개)');
+          
           menus.forEach((menu, i) => { 
             const a1 = (-90 + i * slice) * Math.PI / 180;
             const a2 = (-90 + (i + 1) * slice) * Math.PI / 180;
@@ -165,12 +167,23 @@
             const tx = 250 + 178 * Math.cos(mid);
             const ty = 250 + 178 * Math.sin(mid);
             const readable = angle > 90 && angle < 270 ? angle + 180 : angle; 
-            const t = el('text', {x: tx, y: ty, fill: '#1d2433', 'font-family': 'Gowun Dodum, sans-serif', 'font-size': '11', 'font-weight': 'bold', 'text-anchor': 'middle', 'dominant-baseline': 'middle', transform: `rotate(${readable} ${tx} ${ty})`});
+            
+            const t = el('text', {
+              x: tx, 
+              y: ty, 
+              fill: '#1d2433', 
+              'font-family': 'Gowun Dodum, sans-serif', 
+              'font-size': '11', 
+              'font-weight': 'bold', 
+              'text-anchor': 'middle', 
+              'dominant-baseline': 'middle',
+              transform: `rotate(${readable} ${tx} ${ty})`
+            });
             t.textContent = menu;
             disk.append(t);
           });
           
-          console.log('✅ 룰렛 그리기 완료');
+          console.log('✅ 룰렛 그리기 완료 - SVG children:', svg.children.length);
         } catch (error) {
           console.error('❌ 룰렛 그리기 실패:', error);
           return;
@@ -192,7 +205,13 @@
           let isSpinning = false;
           
           button.addEventListener('click', async () => {
-            if (isSpinning) return;
+            console.log('🖱️ 버튼 클릭됨 - isSpinning:', isSpinning);
+            
+            if (isSpinning) {
+              console.warn('⚠️ 이미 회전 중입니다');
+              return;
+            }
+            
             isSpinning = true;
             button.disabled = true;
             winner.classList.remove('show');
@@ -200,10 +219,11 @@
             const picked = Math.floor(Math.random() * total);
             const center = picked * slice + slice / 2;
             rotation += 360 * 7 + (360 - center - (rotation % 360));
+            
+            console.log('🎡 회전 시작 - 선택:', menus[picked], '회전도:', rotation);
             disk.style.transform = `rotate(${rotation}deg)`;
             
             spinCount++;
-            console.log('🎡 룰렛 회전 #' + spinCount);
             
             setTimeout(async () => {
               const selectedMenu = menus[picked];
@@ -212,11 +232,11 @@
               button.disabled = false;
               button.textContent = '한 번 더 돌리기 ↻';
               isSpinning = false;
-              console.log('🎉 선택된 메뉴:', selectedMenu);
+              console.log('🎉 회전 완료 - 선택된 메뉴:', selectedMenu);
               
-              if (supabase && sessionId) {
+              if (supabaseClient && sessionId) {
                 try {
-                  await supabase.from('roulette_spins').insert([{
+                  await supabaseClient.from('roulette_spins').insert([{
                     session_id: sessionId,
                     menu: selectedMenu,
                     spin_count: spinCount,
