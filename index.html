@@ -44,6 +44,22 @@
       #disk { transform-box:view-box; transform-origin:center; transition:transform 4.2s cubic-bezier(.13,.78,.1,1); }
       .hub { position:absolute; inset:0; margin:auto; width:91px; height:91px; z-index:2; border:2px solid var(--ink); border-radius:50%; background:#fffdf7; display:grid; place-items:center; text-align:center; font-family:'Jua',sans-serif; line-height:1.05; font-size:17px; pointer-events:none; transition:opacity .2s; }
       .hub small { display:block; font:10px 'DM Mono',monospace; margin-top:3px; }
+      .roulette-toolbar { position:absolute; top:10px; right:6px; z-index:7; }
+      .menu-editor-toggle { border:2px solid var(--ink); border-radius:999px; background:#fffdf7; padding:8px 14px; font:14px 'Jua',sans-serif; color:var(--ink); cursor:pointer; box-shadow:3px 3px 0 var(--coral); transition:transform .15s, box-shadow .15s; }
+      .menu-editor-toggle:hover { transform:translate(1px,1px); box-shadow:2px 2px 0 var(--coral); }
+      .menu-editor { position:absolute; top:54px; right:0; width:min(300px,78vw); background:#fffdf7; border:2px solid var(--ink); border-radius:16px; box-shadow:6px 6px 0 var(--coral); padding:16px 14px 12px; z-index:8; display:none; }
+      .menu-editor.open { display:block; }
+      .menu-editor-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; font-family:'Jua',sans-serif; font-size:18px; }
+      .menu-editor-close { border:0; background:transparent; font-size:22px; cursor:pointer; color:var(--ink); line-height:1; }
+      .menu-list { display:flex; flex-direction:column; gap:8px; max-height:210px; overflow:auto; padding-right:4px; }
+      .menu-item { display:flex; align-items:center; justify-content:space-between; gap:8px; border:1.5px solid rgba(29,36,51,.3); border-radius:10px; padding:7px 8px 7px 10px; background:#fff; }
+      .menu-item span { font-size:14px; line-height:1.2; word-break:break-word; }
+      .remove-menu { width:28px; height:28px; border:1.5px solid var(--ink); border-radius:50%; background:var(--cream); color:var(--ink); font-size:16px; line-height:1; cursor:pointer; }
+      .menu-editor-form { display:flex; gap:8px; margin-top:12px; align-items:stretch; }
+      .menu-editor-form input { flex:1 1 auto; min-width:0; width:100%; border:1.5px solid var(--ink); border-radius:10px; padding:10px 12px; font-size:14px; font-family:'Gowun Dodum',sans-serif; background:#fffdf7; }
+      .menu-editor-form button { flex:0 0 auto; border:2px solid var(--ink); border-radius:10px; padding:9px 12px; background:var(--yellow); font-family:'Jua',sans-serif; font-size:14px; cursor:pointer; white-space:nowrap; }
+      .quick-toggle { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:16px; font-size:14px; color:#3c4552; font-weight:700; }
+      .quick-toggle input { width:16px; height:16px; accent-color:var(--coral); }
       .spin { position:relative; z-index:5; margin-top:26px; border:2px solid var(--ink); border-radius:9px; padding:16px 31px; color:#fff; background:var(--ink); font:20px 'Jua',sans-serif; cursor:pointer; box-shadow:5px 5px 0 var(--coral); transition:transform .15s,box-shadow .15s; }
       .spin:hover { transform:translate(2px,2px); box-shadow:3px 3px 0 var(--coral); }
       .spin:disabled { opacity:.65; cursor:wait; transform:none; }
@@ -54,7 +70,7 @@
       .winner.show { animation:pop .65s cubic-bezier(.18,1.35,.45,1) forwards; }
       @keyframes pop { to { opacity:1; transform:scale(1) rotate(0); } }
       footer { padding:0 0 14px; text-align:center; font:11px 'DM Mono',monospace; color:#687080; }
-      @media(max-width:760px){ header{height:72px}.shell{width:min(100% - 28px,540px)}.tag{font-size:9px;padding:7px 9px}.logo{font-size:19px}main{display:flex; flex-direction:column; gap:10px; align-items:stretch; padding:27px 0 28px}.intro{font-size:15px}.mobile-break{display:inline}.tips{margin-top:20px}.roulette-zone{padding-top:30px}.sun{top:40px;width:min(86vw,460px)}.wheel-wrap{width:min(86vw,460px)}h1{font-size:50px}.pointer{top:-11px;border-left-width:18px;border-right-width:18px;border-top-width:43px}.hub{width:76px;height:76px;font-size:14px}.winner{width:155px;height:98px;font-size:13px}.winner strong{font-size:26px}.spin{padding:15px 25px;margin-top:23px}.result{display:none} }
+      @media(max-width:760px){ header{height:72px}.shell{width:min(100% - 28px,540px)}.tag{font-size:9px;padding:7px 9px}.logo{font-size:19px}main{display:flex; flex-direction:column; gap:10px; align-items:stretch; padding:27px 0 28px}.intro{font-size:15px}.mobile-break{display:inline}.tips{margin-top:20px}.roulette-zone{padding-top:30px}.sun{top:40px;width:min(86vw,460px)}.wheel-wrap{width:min(86vw,460px)}h1{font-size:50px}.pointer{top:-11px;border-left-width:18px;border-right-width:18px;border-top-width:43px}.hub{width:76px;height:76px;font-size:14px}.winner{width:155px;height:98px;font-size:13px}.winner strong{font-size:26px}.spin{padding:15px 25px;margin-top:23px}.menu-editor{width:min(290px,82vw); right:0}.menu-editor-form{flex-direction:column; align-items:stretch}.menu-editor-form input{width:100%}.menu-editor-form button{width:100%}.result{display:none} }
     </style>
   </head>
   <body>
@@ -62,7 +78,7 @@
     <!-- Supabase 클라이언트 라이브러리 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <div class="shell">
-      <header><div class="logo"><span class="logo-mark">✦</span>오늘 점심 뭐 먹지?</div><div class="tag">LUNCH DECIDER v1.0</div></header>
+      <header><div class="logo"><span class="logo-mark">✦</span>오늘 점심 뭐 먹지?</div><div class="tag">LUNCH DECIDER v2.0</div></header>
       <main>
         <section>
           <div class="eyebrow"><span></span>점심메뉴룰렛</div>
@@ -72,8 +88,26 @@
         </section>
         <section class="roulette-zone" aria-label="점심 메뉴 룰렛">
           <div class="sun"></div>
+          <div class="roulette-toolbar">
+            <button type="button" class="menu-editor-toggle" id="menuEditorToggle">메뉴 수정</button>
+          </div>
+          <div class="menu-editor" id="menuEditorPanel" aria-hidden="true">
+            <div class="menu-editor-header">
+              <span>메뉴 목록</span>
+              <button type="button" class="menu-editor-close" id="closeMenuEditor" aria-label="메뉴 수정 닫기">×</button>
+            </div>
+            <div class="menu-list" id="menuList"></div>
+            <div class="menu-editor-form">
+              <input id="menuInput" type="text" maxlength="20" placeholder="새 메뉴 입력" aria-label="새 메뉴 입력" />
+              <button type="button" id="addMenuButton">추가</button>
+            </div>
+          </div>
           <div class="wheel-wrap"><div class="pointer"></div><svg id="wheel" viewBox="0 0 500 500" role="img" aria-label="점심 메뉴 룰렛"></svg><div class="hub">오늘의<br />점심</div><div class="winner" id="winner">오늘의 점심은<strong></strong></div></div>
           <button class="spin" id="spinButton">점심 룰렛 돌리기 ✦</button>
+          <label class="quick-toggle" for="quickResultToggle">
+            <input type="checkbox" id="quickResultToggle" />
+            <span>빠른 결과 보기</span>
+          </label>
           <div class="result" id="result" aria-live="polite"></div>
         </section>
       </main>
@@ -85,6 +119,67 @@
       let sessionId = null;
       let sessionStartTime = null;
       let spinCount = 0;
+      let quickResultEnabled = false;
+      let addedMenus = [];
+      let removedMenus = [];
+
+      function normalizeMenuText(value) {
+        return String(value || '').trim().replace(/\s+/g, ' ');
+      }
+
+      function loadLocalSessionPreferences() {
+        try {
+          const savedQuick = localStorage.getItem('quickResultEnabled');
+          const savedAdded = localStorage.getItem('addedMenus');
+          const savedRemoved = localStorage.getItem('removedMenus');
+
+          quickResultEnabled = savedQuick === 'true';
+          addedMenus = savedAdded ? JSON.parse(savedAdded) : [];
+          removedMenus = savedRemoved ? JSON.parse(savedRemoved) : [];
+
+          addedMenus = Array.isArray(addedMenus) ? addedMenus.map(normalizeMenuText).filter(Boolean) : [];
+          removedMenus = Array.isArray(removedMenus) ? removedMenus.map(normalizeMenuText).filter(Boolean) : [];
+        } catch (error) {
+          console.warn('⚠️ 로컬 상태 복원 실패:', error);
+          quickResultEnabled = false;
+          addedMenus = [];
+          removedMenus = [];
+        }
+      }
+
+      function saveLocalSessionPreferences() {
+        localStorage.setItem('quickResultEnabled', String(quickResultEnabled));
+        localStorage.setItem('addedMenus', JSON.stringify(addedMenus));
+        localStorage.setItem('removedMenus', JSON.stringify(removedMenus));
+      }
+
+      async function persistSessionMetadata() {
+        if (!supabaseClient || !sessionId) return;
+
+        try {
+          const payload = {
+            quick_result_enabled: Boolean(quickResultEnabled),
+            added_menus: JSON.stringify(addedMenus),
+            removed_menus: JSON.stringify(removedMenus),
+            updated_at: new Date().toISOString()
+          };
+
+          const { error } = await supabaseClient
+            .from('sessions')
+            .update(payload)
+            .eq('session_id', sessionId);
+
+          if (error) {
+            console.warn('⚠️ 세션 메타데이터 저장 실패:', error.message);
+            return false;
+          }
+
+          return true;
+        } catch (error) {
+          console.warn('⚠️ 세션 메타데이터 저장 예외:', error);
+          return false;
+        }
+      }
 
       async function initializeSupabase() {
         try {
@@ -117,6 +212,7 @@
           
           sessionId = localStorage.getItem('sessionId');
           sessionStartTime = new Date();
+          loadLocalSessionPreferences();
           
           if (!sessionId) {
             sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -126,6 +222,10 @@
             const savedTime = localStorage.getItem('sessionStartTime');
             if (savedTime) sessionStartTime = new Date(savedTime);
             console.log('📝 기존 세션 복구:', sessionId);
+          }
+
+          if (quickResultToggle) {
+            quickResultToggle.checked = quickResultEnabled;
           }
           
           if (!localStorage.getItem('sessionStartTime')) {
@@ -169,7 +269,11 @@
         try {
           await supabaseClient.from('sessions').update({
             end_time: endTime.toISOString(),
-            duration_minutes: durationMinutes
+            duration_minutes: durationMinutes,
+            quick_result_enabled: Boolean(quickResultEnabled),
+            added_menus: JSON.stringify(addedMenus),
+            removed_menus: JSON.stringify(removedMenus),
+            updated_at: endTime.toISOString()
           }).eq('session_id', sessionId);
         } catch (error) {
           console.warn('⚠️ 세션 저장 오류:', error);
@@ -182,17 +286,23 @@
         initializeSupabase();
 
         // ========== 룰렛 메뉴 및 색상 ==========
-        const menus = ['김치찌개','제육볶음','된장찌개','비빔밥','국밥','순두부찌개','칼국수','냉면','쌀국수','마라탕','짜장면','짬뽕','볶음밥','돈까스','라멘','초밥','우동','카레','파스타','피자','햄버거','샌드위치','샐러드','김밥','떡볶이','닭갈비','보쌈','족발','닭볶음탕','치킨','부대찌개','뚝배기불고기','설렁탕','콩나물국밥','분짜','팟타이'];
+        let menus = ['김치찌개','제육볶음','된장찌개','비빔밥','국밥','순두부찌개','칼국수','냉면','쌀국수','마라탕','짜장면','짬뽕','볶음밥','돈까스','라멘','초밥','우동','카레','파스타','피자','햄버거','샌드위치','샐러드','김밥','떡볶이','닭갈비','보쌈','족발','닭볶음탕','치킨','부대찌개','뚝배기불고기','설렁탕','콩나물국밥','분짜','팟타이'];
         const colors = ['#ff725e','#cbeef0','#d7f4cf','#ffc844','#f8a6a1','#b7d6f6','#f6d5a6','#c9b9ed'];
         const svg = document.getElementById('wheel');
+        const menuEditorToggle = document.getElementById('menuEditorToggle');
+        const menuEditorPanel = document.getElementById('menuEditorPanel');
+        const closeMenuEditor = document.getElementById('closeMenuEditor');
+        const menuList = document.getElementById('menuList');
+        const menuInput = document.getElementById('menuInput');
+        const addMenuButton = document.getElementById('addMenuButton');
+        const quickResultToggle = document.getElementById('quickResultToggle');
+        let currentDisk = null;
         
         if (!svg) {
           console.error('❌ SVG 요소를 찾을 수 없습니다');
           return;
         }
 
-        const total = menus.length;
-        const slice = 360 / total;
         const ns = 'http://www.w3.org/2000/svg';
         
         function el(name, attrs) {
@@ -201,44 +311,163 @@
           return e;
         }
 
-        try {
-          const disk = el('g', {id: 'disk'}); 
-          svg.append(disk);
-          
-          console.log('🎨 메뉴 그리기 시작 (총', menus.length, '개)');
-          
-          menus.forEach((menu, i) => { 
+        function renderMenuList() {
+          if (!menuList) return;
+          menuList.innerHTML = '';
+
+          if (menus.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'menu-item';
+            empty.innerHTML = '<span>등록된 메뉴가 없어요.</span>';
+            menuList.appendChild(empty);
+            return;
+          }
+
+          menus.forEach((menu, index) => {
+            const item = document.createElement('div');
+            item.className = 'menu-item';
+
+            const label = document.createElement('span');
+            label.textContent = menu;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'remove-menu';
+            removeBtn.setAttribute('aria-label', `${menu} 삭제`);
+            removeBtn.textContent = '×';
+            removeBtn.addEventListener('click', () => {
+              const removed = menus.splice(index, 1)[0];
+              if (removed) {
+                removedMenus.push(removed);
+                saveLocalSessionPreferences();
+                persistSessionMetadata();
+              }
+              renderMenuList();
+              renderWheel();
+              updateSpinButtonState();
+            });
+
+            item.append(label, removeBtn);
+            menuList.appendChild(item);
+          });
+        }
+
+        function renderWheel() {
+          const existingDisk = document.getElementById('disk');
+          if (existingDisk) existingDisk.remove();
+
+          if (menus.length === 0) {
+            const emptyDisk = el('g', { id: 'disk' });
+            svg.append(emptyDisk);
+            currentDisk = emptyDisk;
+            return;
+          }
+
+          const total = menus.length;
+          const slice = 360 / total;
+          const disk = el('g', { id: 'disk' });
+
+          menus.forEach((menu, i) => {
             const a1 = (-90 + i * slice) * Math.PI / 180;
             const a2 = (-90 + (i + 1) * slice) * Math.PI / 180;
-            const r = 246; 
-            const d = `M250 250 L${250 + r * Math.cos(a1)} ${250 + r * Math.sin(a1)} A${r} ${r} 0 0 1 ${250 + r * Math.cos(a2)} ${250 + r * Math.sin(a2)} Z`; 
-            disk.append(el('path', {d, fill: colors[i % colors.length], stroke: '#1d2433', 'stroke-width': '1.4'})); 
-            
+            const r = 246;
+            const d = `M250 250 L${250 + r * Math.cos(a1)} ${250 + r * Math.sin(a1)} A${r} ${r} 0 0 1 ${250 + r * Math.cos(a2)} ${250 + r * Math.sin(a2)} Z`;
+            disk.append(el('path', { d, fill: colors[i % colors.length], stroke: '#1d2433', 'stroke-width': '1.4' }));
+
             const angle = -90 + (i + .5) * slice;
             const mid = angle * Math.PI / 180;
             const tx = 250 + 178 * Math.cos(mid);
             const ty = 250 + 178 * Math.sin(mid);
-            const readable = angle > 90 && angle < 270 ? angle + 180 : angle; 
-            
+            const readable = angle > 90 && angle < 270 ? angle + 180 : angle;
+
             const t = el('text', {
-              x: tx, 
-              y: ty, 
-              fill: '#1d2433', 
-              'font-family': 'Gowun Dodum, sans-serif', 
-              'font-size': '11', 
-              'font-weight': 'bold', 
-              'text-anchor': 'middle', 
+              x: tx,
+              y: ty,
+              fill: '#1d2433',
+              'font-family': 'Gowun Dodum, sans-serif',
+              'font-size': '11',
+              'font-weight': 'bold',
+              'text-anchor': 'middle',
               'dominant-baseline': 'middle',
               transform: `rotate(${readable} ${tx} ${ty})`
             });
             t.textContent = menu;
             disk.append(t);
           });
-          
-          console.log('✅ 룰렛 그리기 완료 - SVG children:', svg.children.length);
-        } catch (error) {
-          console.error('❌ 룰렛 그리기 실패:', error);
-          return;
+
+          svg.append(disk);
+          currentDisk = disk;
+        }
+
+        function updateSpinButtonState() {
+          const button = document.getElementById('spinButton');
+          if (!button) return;
+
+          if (menus.length === 0) {
+            button.disabled = true;
+            button.textContent = '메뉴를 먼저 추가하세요';
+            return;
+          }
+
+          button.disabled = false;
+          button.textContent = '점심 룰렛 돌리기 ✦';
+        }
+
+        renderMenuList();
+        renderWheel();
+        updateSpinButtonState();
+
+        if (menuEditorToggle && menuEditorPanel) {
+          menuEditorToggle.addEventListener('click', () => {
+            const isOpen = menuEditorPanel.classList.toggle('open');
+            menuEditorPanel.setAttribute('aria-hidden', String(!isOpen));
+          });
+        }
+
+        if (closeMenuEditor && menuEditorPanel) {
+          closeMenuEditor.addEventListener('click', () => {
+            menuEditorPanel.classList.remove('open');
+            menuEditorPanel.setAttribute('aria-hidden', 'true');
+          });
+        }
+
+        if (quickResultToggle) {
+          quickResultToggle.checked = quickResultEnabled;
+          quickResultToggle.addEventListener('change', () => {
+            quickResultEnabled = quickResultToggle.checked;
+            saveLocalSessionPreferences();
+            persistSessionMetadata();
+          });
+        }
+
+        if (addMenuButton && menuInput) {
+          const addMenu = () => {
+            const value = normalizeMenuText(menuInput.value);
+            if (!value) {
+              menuInput.focus();
+              return;
+            }
+
+            if (menus.includes(value)) {
+              menuInput.value = '';
+              menuInput.focus();
+              return;
+            }
+
+            menus.push(value);
+            addedMenus.push(value);
+            saveLocalSessionPreferences();
+            persistSessionMetadata();
+            menuInput.value = '';
+            renderMenuList();
+            renderWheel();
+            updateSpinButtonState();
+          };
+
+          addMenuButton.addEventListener('click', addMenu);
+          menuInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') addMenu();
+          });
         }
 
         // ========== 룰렛 실행 로직 ==========
@@ -246,37 +475,46 @@
           const button = document.getElementById('spinButton');
           const winner = document.getElementById('winner');
           const winnerName = winner.querySelector('strong');
-          const disk = document.getElementById('disk');
-          
-          if (!button || !winner || !winnerName || !disk) {
+
+          if (!button || !winner || !winnerName) {
             console.error('❌ 필수 DOM 요소를 찾을 수 없습니다');
             return;
           }
 
           let rotation = 0;
           let isSpinning = false;
-          
+
           button.addEventListener('click', async () => {
-            console.log('🖱️ 버튼 클릭됨 - isSpinning:', isSpinning);
-            
+            const disk = currentDisk || document.getElementById('disk');
+            console.log('🖱️ 버튼 클릭됨 - isSpinning:', isSpinning, '메뉴 수:', menus.length, 'disk 존재:', !!disk);
+
+            if (menus.length === 0 || !disk) {
+              return;
+            }
+
             if (isSpinning) {
               console.warn('⚠️ 이미 회전 중입니다');
               return;
             }
-            
+
+            const quickMode = quickResultToggle && quickResultToggle.checked;
+            const total = menus.length;
+            const slice = 360 / total;
+            const picked = Math.floor(Math.random() * total);
+            const center = picked * slice + slice / 2;
+
             isSpinning = true;
             button.disabled = true;
             winner.classList.remove('show');
-            
-            const picked = Math.floor(Math.random() * total);
-            const center = picked * slice + slice / 2;
+
             rotation += 360 * 7 + (360 - center - (rotation % 360));
-            
-            console.log('🎡 회전 시작 - 선택:', menus[picked], '회전도:', rotation);
+            disk.style.transition = quickMode ? 'transform 0.18s ease' : 'transform 4.2s cubic-bezier(.13,.78,.1,1)';
             disk.style.transform = `rotate(${rotation}deg)`;
-            
+
             spinCount++;
-            
+
+            const finishDelay = quickMode ? 180 : 4250;
+
             setTimeout(async () => {
               const selectedMenu = menus[picked];
               winnerName.textContent = selectedMenu;
@@ -285,25 +523,25 @@
               button.textContent = '한 번 더 돌리기 ↻';
               isSpinning = false;
               console.log('🎉 회전 완료 - 선택된 메뉴:', selectedMenu);
-              
+
               if (supabaseClient && sessionId) {
                 try {
                   console.log('💾 데이터 저장 시도:', { menu: selectedMenu, spinCount });
-                  
+
                   const { data, error } = await supabaseClient.from('roulette_spins').insert([{
                     session_id: sessionId,
                     menu: selectedMenu,
                     spin_count: spinCount,
                     spun_at: new Date().toISOString()
                   }]);
-                  
+
                   if (error) {
                     console.error('❌ 저장 실패:');
                     console.error('  - 에러 메시지:', error.message);
                     console.error('  - 에러 코드:', error.code);
                     console.error('  - 상태 코드:', error.status);
                     console.error('  - 전체 에러:', error);
-                    
+
                     if (error.message.includes('relation') || error.message.includes('roulette_spins')) {
                       console.log('📝 해결책: roulette_spins 테이블이 생성되어 있는지 확인하세요');
                     }
@@ -325,9 +563,9 @@
                   console.log('ℹ️ sessionId가 없어서 데이터 저장 안됨');
                 }
               }
-            }, 4250);
+            }, finishDelay);
           });
-          
+
           console.log('✅ 룰렛 준비 완료');
         } catch (error) {
           console.error('❌ 룰렛 이벤트 등록 실패:', error);
