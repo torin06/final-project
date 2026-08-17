@@ -120,8 +120,10 @@
       let sessionStartTime = null;
       let spinCount = 0;
       let quickResultEnabled = false;
+      let quickResultClicked = false;
       let addedMenus = [];
       let removedMenus = [];
+      const pendingInteractionEvents = [];
 
       function normalizeMenuText(value) {
         return String(value || '').trim().replace(/\s+/g, ' ');
@@ -130,10 +132,12 @@
       function loadLocalSessionPreferences() {
         try {
           const savedQuick = localStorage.getItem('quickResultEnabled');
+          const savedQuickClicked = localStorage.getItem('quickResultClicked');
           const savedAdded = localStorage.getItem('addedMenus');
           const savedRemoved = localStorage.getItem('removedMenus');
 
           quickResultEnabled = savedQuick === 'true';
+          quickResultClicked = savedQuickClicked === 'true';
           addedMenus = savedAdded ? JSON.parse(savedAdded) : [];
           removedMenus = savedRemoved ? JSON.parse(savedRemoved) : [];
 
@@ -142,6 +146,7 @@
         } catch (error) {
           console.warn('⚠️ 로컬 상태 복원 실패:', error);
           quickResultEnabled = false;
+          quickResultClicked = false;
           addedMenus = [];
           removedMenus = [];
         }
@@ -149,6 +154,7 @@
 
       function saveLocalSessionPreferences() {
         localStorage.setItem('quickResultEnabled', String(quickResultEnabled));
+        localStorage.setItem('quickResultClicked', String(quickResultClicked));
         localStorage.setItem('addedMenus', JSON.stringify(addedMenus));
         localStorage.setItem('removedMenus', JSON.stringify(removedMenus));
       }
@@ -159,8 +165,9 @@
         try {
           const payload = {
             quick_result_enabled: Boolean(quickResultEnabled),
-            added_menus: JSON.stringify(addedMenus),
-            removed_menus: JSON.stringify(removedMenus),
+            quick_result_clicked: Boolean(quickResultClicked),
+            added_menus: addedMenus,
+            removed_menus: removedMenus,
             updated_at: new Date().toISOString()
           };
 
@@ -178,6 +185,37 @@
         } catch (error) {
           console.warn('⚠️ 세션 메타데이터 저장 예외:', error);
           return false;
+        }
+      }
+
+      async function persistInteractionEvent(eventType, menuValue = null, eventValue = null) {
+        const event = {
+          event_type: eventType,
+          menu_value: menuValue,
+          event_value: eventValue,
+          occurred_at: new Date().toISOString()
+        };
+
+        if (!supabaseClient || !sessionId) {
+          pendingInteractionEvents.push(event);
+          return;
+        }
+
+        const { error } = await supabaseClient.from('roulette_interactions').insert([{
+          session_id: sessionId,
+          ...event
+        }]);
+
+        if (error) console.warn('⚠️ 사용자 행동 저장 실패:', error.message);
+      }
+
+      async function flushPendingInteractionEvents() {
+        if (!supabaseClient || !sessionId || pendingInteractionEvents.length === 0) return;
+        const events = pendingInteractionEvents.splice(0).map((event) => ({ session_id: sessionId, ...event }));
+        const { error } = await supabaseClient.from('roulette_interactions').insert(events);
+        if (error) {
+          pendingInteractionEvents.unshift(...events.map(({ session_id: ignored, ...event }) => event));
+          console.warn('⚠️ 대기 중인 사용자 행동 저장 실패:', error.message);
         }
       }
 
@@ -224,9 +262,8 @@
             console.log('📝 기존 세션 복구:', sessionId);
           }
 
-          if (quickResultToggle) {
-            quickResultToggle.checked = quickResultEnabled;
-          }
+          const quickToggle = document.getElementById('quickResultToggle');
+          if (quickToggle) quickToggle.checked = quickResultEnabled;
           
           if (!localStorage.getItem('sessionStartTime')) {
             localStorage.setItem('sessionStartTime', sessionStartTime.toISOString());
@@ -254,6 +291,24 @@
               console.error('❌ 세션 저장 중 예외:', e.message);
             }
           }
+
+          // A browser may retain a session ID even if an earlier DB insert failed.
+          // Ensure the parent session exists before writing interaction rows.
+          const { error: ensureSessionError } = await supabaseClient.from('sessions').upsert([{
+            session_id: sessionId,
+            start_time: sessionStartTime.toISOString()
+          }], {
+            onConflict: 'session_id',
+            ignoreDuplicates: true
+          });
+
+          if (ensureSessionError) {
+            console.warn('⚠️ 세션 확인 실패:', ensureSessionError.message);
+          } else {
+            await persistSessionMetadata();
+          }
+
+          await flushPendingInteractionEvents();
           
           console.log('✅ Supabase 초기화 완료!');
         } catch (error) {
@@ -271,8 +326,9 @@
             end_time: endTime.toISOString(),
             duration_minutes: durationMinutes,
             quick_result_enabled: Boolean(quickResultEnabled),
-            added_menus: JSON.stringify(addedMenus),
-            removed_menus: JSON.stringify(removedMenus),
+            quick_result_clicked: Boolean(quickResultClicked),
+            added_menus: addedMenus,
+            removed_menus: removedMenus,
             updated_at: endTime.toISOString()
           }).eq('session_id', sessionId);
         } catch (error) {
@@ -282,6 +338,7 @@
 
       // ========== DOM 로드 완료 후 실행 ==========
       document.addEventListener('DOMContentLoaded', function() {
+        loadLocalSessionPreferences();
         // Supabase 초기화
         initializeSupabase();
 
@@ -341,6 +398,7 @@
                 removedMenus.push(removed);
                 saveLocalSessionPreferences();
                 persistSessionMetadata();
+                persistInteractionEvent('menu_removed', removed);
               }
               renderMenuList();
               renderWheel();
@@ -435,8 +493,10 @@
           quickResultToggle.checked = quickResultEnabled;
           quickResultToggle.addEventListener('change', () => {
             quickResultEnabled = quickResultToggle.checked;
+            quickResultClicked = true;
             saveLocalSessionPreferences();
             persistSessionMetadata();
+            persistInteractionEvent('quick_result_clicked', null, quickResultEnabled);
           });
         }
 
@@ -458,6 +518,7 @@
             addedMenus.push(value);
             saveLocalSessionPreferences();
             persistSessionMetadata();
+            persistInteractionEvent('menu_added', value);
             menuInput.value = '';
             renderMenuList();
             renderWheel();
